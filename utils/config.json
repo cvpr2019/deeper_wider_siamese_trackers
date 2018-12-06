@@ -1,0 +1,14 @@
+{
+    "OTB2013": {
+        "exemplar_size": 135,
+        "instance_size": 263,
+        "w_influence": 0.35,
+        "scale_lr": 0.59
+        },
+    "VOT2017": {
+        "exemplar_size": 135,
+        "instance_size": 263,
+        "w_influence": 0.25,
+        "scale_lr": 0.30
+        }
+}
