@@ -2,11 +2,11 @@
 This repo provides the source code and models of our deeper and wider siamese trackers. For CVPR2019 blind review.
 
 ## Introduction
-[SiamFC]() formulates the task of visual tracking as classification between background and target. [SiamRPN]() improve SiamFC through introducing the robust region proposal estimation. However, the backbone networks used in these trackers are relatively shallow, both [AlexNet](), which does not fully take advantage of the capability of modern deep neural networks. 
+[SiamFC]() formulates the task of visual tracking as classification between background and target. [SiamRPN]() improves SiamFC by introducing the robust region proposal estimation. However, the backbone networks used in these trackers are relatively shallow, which does not fully take advantage of the capability of modern deep neural networks. 
   
 Our proposals improve the performances of fully convolutional siamese trackers by,
-1) introducing CIR and CIR-D units to unveil the power of deeper and wider networks like [ResNet]() and [Inceptipon](), 
-2) designing a reasonable backbone guilded by the analysis of how internal network factors (eg. receptive field, stride, output  feature size) influence tracking performance.
+1) introducing CIR and CIR-D units to unveil the power of deeper and wider networks like [ResNet]() and [Inceptipon](); 
+2) designing a reasonable backbone guilded by the analysis of how internal network factors (eg. receptive field, stride, output feature size) influence tracking performance.
 
 ## Result snapshots
 <!-- <div align=center> <iframe width="560" height="315" src="https://www.youtube.com/embed/hp0idRAF0m0" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
