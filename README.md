@@ -8,7 +8,7 @@ Our proposals improve the performances of fully convolutional siamese trackers b
 1) introducing CIR and CIR-D units to unveil the power of deeper and wider networks like [ResNet]() and [Inceptipon](), 
 2) designing a reasonable backbone guilded by the analysis of how internal network factors (eg. receptive field, stride, output  feature size) influence tracking performance.
 
-## Results snapshots
+## Result snapshots
 <!-- <div align=center> <iframe width="560" height="315" src="https://www.youtube.com/embed/hp0idRAF0m0" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 </div> -->
 
