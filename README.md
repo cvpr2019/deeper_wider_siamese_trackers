@@ -13,7 +13,7 @@ Our proposals improve the performances of fully convolutional siamese trackers b
 </div> -->
 
 <div align=center>
-<img src="https://i.postimg.cc/6QrkG5sj/results.png" width="75%" height="75%" />
+<img src="https://i.postimg.cc/Cxzq6q7L/plot-bbox-git.png" width="75%" height="75%" />
 </div>
 <!-- [![results.png](https://i.postimg.cc/6QrkG5sj/results.png)](https://postimg.cc/zLftsNGK) -->
 
