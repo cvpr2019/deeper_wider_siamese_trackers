@@ -1,12 +1,24 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 
-class ResNet23(nn.Module):
+class ResNet22(nn.Module):
     def __init__(self):
-        super(ResNet23, self).__init__()
+        super(ResNet22, self).__init__()
         self.features = ResNet(Bottleneck_CI, [3, 4], [True, False], [False, True])
         self.feature_size = 512
+
+    def forward(self, x):
+        x = self.features(x)
+        return x
+
+
+class Incep22(nn.Module):
+    def __init__(self):
+        super(Incep22, self).__init__()
+        self.features = Inception(InceptionM, [3, 4])
+        self.feature_size = 640
 
     def forward(self, x):
         x = self.features(x)
@@ -16,8 +28,6 @@ class ResNet23(nn.Module):
 # -------------
 # ResNet tools
 # -------------
-# ResNet blocks from torchvision
-
 def conv3x3(in_planes, out_planes, stride=1):
     """3x3 convolution with padding"""
     return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
@@ -152,9 +162,129 @@ class ResNet(nn.Module):
         return x
 
 
+# ------------
+# Incep tools
+# ------------
+class BasicConv2d_1x1(nn.Module):
+
+    def __init__(self, in_channels, out_channels, last_relu=True, **kwargs):
+        super(BasicConv2d_1x1, self).__init__()
+        self.conv = nn.Conv2d(in_channels, out_channels, bias=False, **kwargs)
+        self.bn = nn.BatchNorm2d(out_channels, eps=0.001)
+        self.last_relu = last_relu
+
+    def forward(self, x):
+        x = self.conv(x)
+        x = self.bn(x)
+
+        if self.last_relu:
+            return F.relu(x, inplace=True)
+        else:
+            return x
+
+
+class BasicConv2d_3x3(nn.Module):
+    expansion = 4
+
+    def __init__(self, inplanes, planes, last_relu=True):
+        super(BasicConv2d_3x3, self).__init__()
+        self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=1, bias=False)
+        self.bn1 = nn.BatchNorm2d(planes)
+        self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=1, padding=1, bias=False)
+        self.bn2 = nn.BatchNorm2d(planes)
+        self.conv3 = nn.Conv2d(planes, planes * self.expansion, kernel_size=1, bias=False)
+        self.bn3 = nn.BatchNorm2d(planes * self.expansion)
+        self.relu = nn.ReLU(inplace=True)
+        self.last_relu = last_relu
+
+    def forward(self, x):
+        out = self.conv1(x)
+        out = self.bn1(out)
+        out = self.relu(out)
+
+        out = self.conv2(out)
+        out = self.bn2(out)
+        out = self.relu(out)
+
+        out = self.conv3(out)
+        out = self.bn3(out)
+
+        if self.last_relu:
+            out = self.relu(out)
+
+        return out
+
+
+class InceptionM(nn.Module):
+
+    def __init__(self, in_channels, planes, last_relu=True):
+        super(InceptionM, self).__init__()
+        self.branch3x3 = BasicConv2d_3x3(in_channels, planes, last_relu)
+        self.branch1x1 = BasicConv2d_1x1(in_channels, planes, last_relu, kernel_size=1)
+
+    def forward(self, x):
+        branch3x3 = self.branch3x3(x)
+        branch1x1 = self.branch1x1(x)
+
+        outputs = [branch3x3, branch1x1]
+        return center_crop(torch.cat(outputs, 1))   # in-layer crop
+
+
+class Inception(nn.Module):
+
+    def __init__(self, block, layers):
+        self.inplanes = 64
+        super(Inception, self).__init__()
+        self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3,
+                               bias=False)
+        self.bn1 = nn.BatchNorm2d(64)
+        self.relu = nn.ReLU(inplace=True)
+        self.maxpool = nn.MaxPool2d(kernel_size=2, stride=2)
+        self.layer1 = self._make_layer(block, 64, 64, layers[0], pool=False)     # in=64, out=320
+        self.layer2 = self._make_layer(block, 320, 128, layers[1], pool=True, last_relu=False)   # in=320, out=640
+
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal(m.weight, mode='fan_out')
+            elif isinstance(m, nn.BatchNorm2d):
+                nn.init.constant(m.weight, 1)
+                nn.init.constant(m.bias, 0)
+
+    def _make_layer(self, block, inchannels, planes, blocks, pool=True, last_relu=True):
+
+        layers = []
+        for i in range(0, blocks):
+            if i == 0:
+                self.inchannels = inchannels
+            else:
+                self.inchannels = planes * 5
+
+            if i == 1 and pool:
+                layers.append(self.maxpool)
+
+            if i == blocks - 1 and not last_relu:
+                layers.append(block(self.inchannels, planes, last_relu))
+            else:
+                layers.append(block(self.inchannels, planes))
+
+        return nn.Sequential(*layers)
+
+    def forward(self, x):
+        x = self.conv1(x)
+        x = self.bn1(x)
+        x = self.relu(x)
+        x = center_crop_conv7(x)
+        x = self.maxpool(x)
+
+        x = self.layer1(x)
+        x = self.layer2(x)
+
+        return x
+
+
 if __name__ == '__main__':
     # check model
-    net = ResNet23()
+    net = ResNet22()
     net.cuda()
 
     from torch.autograd import Variable

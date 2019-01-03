@@ -28,12 +28,12 @@ Intel(R) Xeon(R) CPU E5-2630 v4 @ 2.20GHz GPU: NVIDIA GTX1080
 **Important!!** Since the speed of some opencv versions is relatively slow for some reason, it is recommended that you install packages above.
 
 ## Tracking  
-SiamFC+ based on CIResNet-22 is provided for reproducing in this repo.
+SiamFC+ based on CIResNet-22 and CIR-Incep22 is provided for reproducing in this repo.
 - **Tracking on a specific video**
   - **step1:** place video frames and label file in `dataset` directory. `David3` is provided in this demo.
   - **step2:** run,
 ```bash
-python run_tracker.py --arch SiamFC_plus --resume ./pretrain/CIResNet22.pth --video David3 --vis True
+python run_tracker.py --arch SiamFC_Res22 --resume ./pretrain/CIResNet22.pth --video David3 --vis True
 ```
 `--arch` `--resume` `video` and `vis` indicate model name, pretrained model path, video name and visualization flag respectively.
 
@@ -49,7 +49,7 @@ python run_tracker.py --arch SiamFC_plus --resume ./pretrain/CIResNet22.pth --vi
    - **step2:** run,
 
   ```bash
-    sh run_benchmark.sh
+    sh run_benchmark.sh SiamFC_Res22 ./pretrain/CIResNet22.pth VOT2017
   ```
 
 
@@ -64,13 +64,23 @@ python run_tracker.py --arch SiamFC_plus --resume ./pretrain/CIResNet22.pth --vi
    - **step2:** modify `--dataset VOT2017` in `run_benchmark.sh` to `--dataset OTB2013`
    - **setp3:** run,
   ```bash
-    sh run_benchmark.sh
+    sh run_benchmark.sh SiamFC_Res22 ./pretrain/CIResNet22.pth OTB2013
   ```
+
   - **step4 (optional):** evaluate results with otb-toolkit.
+  <br/>
+
+  If you want to test CIR-Incep22 model, simply modify step3 to, 
+  ```bash
+  sh run_benchmark.sh SiamFC_Incep22 ./pretrain/CIRIncep22.pth OTB2013
+  ```
 
 - **Testing on other benchmarks**  
 
   If you want to test this demo on other benchmarks, please modify the code to your needs. Object tracking algorithms are sensitive to hyperparameters, so careful fine-tuneing for different benchmarks is necessary.
+
+<br/>
+Other models will be released soon.
 
 
 ## License

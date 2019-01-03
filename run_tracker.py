@@ -14,7 +14,7 @@ from utils.utils import load_pretrain, cxy_wh_2_rect, get_min_max_bbox, load_dat
 
 
 parser = argparse.ArgumentParser(description='PyTorch Tracking Test')
-parser.add_argument('--arch', dest='arch', default='SiamFC_plus', help='architecture of pretrained model')
+parser.add_argument('--arch', dest='arch', default='SiamFC_Res22', help='architecture of pretrained model')
 parser.add_argument('--resume', default='./pretrain/CIResNet22.pth', type=str, help='pretrained model')
 parser.add_argument('--dataset', default='OTB2013', choices=['OTB2013', 'VOT2017', 'none'], help='dataset test')
 parser.add_argument('--video', default='', help='dataset test')
@@ -108,14 +108,14 @@ class TrackerConfig(object):
     scale_lr = 0.590
     response_up = 16
 
-    windowing = 'cosine'  # to penalize large displacements
-    w_influence = 0.350   # windowing influence (in convex sum)
+    windowing = 'cosine'
+    w_influence = 0.350
 
-    exemplar_size = 127   # input z size
-    instance_size = 255   # input x size (search region)
+    exemplar_size = 127
+    instance_size = 255
     score_size = 17
     total_stride = 8
-    context_amount = 0.5  # context amount for the exempla
+    context_amount = 0.5
 
     def update(self, newparam=None):
         if newparam:
@@ -146,9 +146,9 @@ def tracker_eval(net, s_x, x_crops, target_pos, window, p):
     r_max, c_max = np.unravel_index(response_map.argmax(), response_map.shape)
     p_corr = [c_max, r_max]
 
-    disp_instance_final = p_corr - np.ceil(p.score_size * p.response_up / 2)      # related to 292 center
-    disp_instance_input = disp_instance_final * p.total_stride / p.response_up    # related to 255 center
-    disp_instance_frame = disp_instance_input * s_x / p.instance_size             # related to original iamge center
+    disp_instance_final = p_corr - np.ceil(p.score_size * p.response_up / 2)
+    disp_instance_input = disp_instance_final * p.total_stride / p.response_up
+    disp_instance_frame = disp_instance_input * s_x / p.instance_size
     new_target_pos = target_pos + disp_instance_frame
 
     return new_target_pos, best_scale
@@ -158,7 +158,7 @@ def SiamFC_init(im, target_pos, target_sz, model):
     state = dict()
     p = TrackerConfig()
     cfg = load_json('./utils/config.json')
-    config = cfg[args.dataset]
+    config = cfg[args.arch][args.dataset]
     p.update(config)
 
     net = model
@@ -278,48 +278,50 @@ def track_video(model, video):
             location = cxy_wh_2_rect(state['target_pos'], state['target_sz'])
             regions.append(1 if 'VOT' in args.dataset else gt[f])
         elif f > start_frame:  # tracking
-            state = SiamFC_track(state, im)  # track
+            state = SiamFC_track(state, im)
             location = cxy_wh_2_rect(state['target_pos'], state['target_sz'])
             b_overlap = judge_overlap(gt[f], location) if 'VOT' in args.dataset else 1
             if b_overlap:
                 regions.append(location)
             else:
                 regions.append(2)
-                start_frame = f + 5  # skip 5 frames
+                start_frame = f + 5
         else:
             regions.append(0)
 
         toc += cv2.getTickCount() - tic
 
-        if bool(args.vis) and f >= start_frame:  # visualization (skip lost frame)
-            if f == 0:
-                cv2.destroyAllWindows()
-                cv2.rectangle(im, (int(gt[f, 0]), int(gt[f, 1])), (int(gt[f, 0] + gt[f, 2]), int(gt[f, 1] + gt[f, 3])), (0, 255, 0), 3)
-            else:
-                location = [int(l) for l in location]  #
-                cv2.rectangle(im, (location[0], location[1]), (location[0] + location[2], location[1] + location[3]), (0, 255, 255), 3)
-            cv2.putText(im, '#' + str(f), (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
-
-            cv2.imshow(video['name'], im)
-            cv2.waitKey(1)
-
+    if bool(args.vis) and f >= start_frame:  # visualization (skip lost frame)
+        if f == 0:
+            cv2.destroyAllWindows()
+            cv2.rectangle(im, (int(gt[f, 0]), int(gt[f, 1])), (int(gt[f, 0] + gt[f, 2]), int(gt[f, 1] + gt[f, 3])),
+                          (0, 255, 0), 3)
         else:
-            with open(result_path, "w") as fin:
-                if 'VOT' in args.dataset:
-                    for x in regions:
-                        if isinstance(x, int):
-                            fin.write("{:d}\n".format(x))
-                        else:
-                            p_bbox = x.copy()
-                            if p_bbox[0] < 0: p_bbox[0] = 0
-                            if p_bbox[1] < 0: p_bbox[1] = 0
-                            fin.write(','.join([str(i) for i in p_bbox]) + '\n')
-                else:
-                    for x in regions:
+            location = [int(l) for l in location]  #
+            cv2.rectangle(im, (location[0], location[1]), (location[0] + location[2], location[1] + location[3]),
+                          (0, 255, 255), 3)
+        cv2.putText(im, '#' + str(f), (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
+
+        cv2.imshow(video['name'], im)
+        cv2.waitKey(1)
+
+    else:
+        with open(result_path, "w") as fin:
+            if 'VOT' in args.dataset:
+                for x in regions:
+                    if isinstance(x, int):
+                        fin.write("{:d}\n".format(x))
+                    else:
                         p_bbox = x.copy()
-                        if p_bbox[0] < 0: p_bbox[0] = 1
-                        if p_bbox[1] < 0: p_bbox[1] = 1
-                        fin.write(','.join([str(i + 1) if idx == 0 or idx == 1 else str(i) for idx, i in enumerate(p_bbox)]) + '\n')
+                        if p_bbox[0] < 0: p_bbox[0] = 0
+                        if p_bbox[1] < 0: p_bbox[1] = 0
+                        fin.write(','.join([str(i) for i in p_bbox]) + '\n')
+            else:
+                for x in regions:
+                    p_bbox = x.copy()
+                    if p_bbox[0] < 0: p_bbox[0] = 1
+                    if p_bbox[1] < 0: p_bbox[1] = 1
+                    fin.write(','.join([str(i + 1) if idx == 0 or idx == 1 else str(i) for idx, i in enumerate(p_bbox)]) + '\n')
 
     toc /= cv2.getTickFrequency()
     print('Video: {:12s} Time: {:2.1f}s Speed: {:3.1f}fps'.format(video['name'], toc, f / toc))
