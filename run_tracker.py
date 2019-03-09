@@ -291,37 +291,37 @@ def track_video(model, video):
 
         toc += cv2.getTickCount() - tic
 
-    if bool(args.vis) and f >= start_frame:  # visualization (skip lost frame)
-        if f == 0:
-            cv2.destroyAllWindows()
-            cv2.rectangle(im, (int(gt[f, 0]), int(gt[f, 1])), (int(gt[f, 0] + gt[f, 2]), int(gt[f, 1] + gt[f, 3])),
-                          (0, 255, 0), 3)
-        else:
-            location = [int(l) for l in location]  #
-            cv2.rectangle(im, (location[0], location[1]), (location[0] + location[2], location[1] + location[3]),
-                          (0, 255, 255), 3)
-        cv2.putText(im, '#' + str(f), (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
-
-        cv2.imshow(video['name'], im)
-        cv2.waitKey(1)
-
-    else:
-        with open(result_path, "w") as fin:
-            if 'VOT' in args.dataset:
-                for x in regions:
-                    if isinstance(x, int):
-                        fin.write("{:d}\n".format(x))
-                    else:
-                        p_bbox = x.copy()
-                        if p_bbox[0] < 0: p_bbox[0] = 0
-                        if p_bbox[1] < 0: p_bbox[1] = 0
-                        fin.write(','.join([str(i) for i in p_bbox]) + '\n')
+        if bool(args.vis) and f >= start_frame:  # visualization (skip lost frame)
+            if f == 0:
+                cv2.destroyAllWindows()
+                cv2.rectangle(im, (int(gt[f, 0]), int(gt[f, 1])), (int(gt[f, 0] + gt[f, 2]), int(gt[f, 1] + gt[f, 3])),
+                              (0, 255, 0), 3)
             else:
-                for x in regions:
-                    p_bbox = x.copy()
-                    if p_bbox[0] < 0: p_bbox[0] = 1
-                    if p_bbox[1] < 0: p_bbox[1] = 1
-                    fin.write(','.join([str(i + 1) if idx == 0 or idx == 1 else str(i) for idx, i in enumerate(p_bbox)]) + '\n')
+                location = [int(l) for l in location]  #
+                cv2.rectangle(im, (location[0], location[1]), (location[0] + location[2], location[1] + location[3]),
+                              (0, 255, 255), 3)
+            cv2.putText(im, '#' + str(f), (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
+
+            cv2.imshow(video['name'], im)
+            cv2.waitKey(1)
+
+        else:
+            with open(result_path, "w") as fin:
+                if 'VOT' in args.dataset:
+                    for x in regions:
+                        if isinstance(x, int):
+                            fin.write("{:d}\n".format(x))
+                        else:
+                            p_bbox = x.copy()
+                            if p_bbox[0] < 0: p_bbox[0] = 0
+                            if p_bbox[1] < 0: p_bbox[1] = 0
+                            fin.write(','.join([str(i) for i in p_bbox]) + '\n')
+                else:
+                    for x in regions:
+                        p_bbox = x.copy()
+                        if p_bbox[0] < 0: p_bbox[0] = 1
+                        if p_bbox[1] < 0: p_bbox[1] = 1
+                        fin.write(','.join([str(i + 1) if idx == 0 or idx == 1 else str(i) for idx, i in enumerate(p_bbox)]) + '\n')
 
     toc /= cv2.getTickFrequency()
     print('Video: {:12s} Time: {:2.1f}s Speed: {:3.1f}fps'.format(video['name'], toc, f / toc))
